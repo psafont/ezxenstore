@@ -3,6 +3,7 @@
   (public_name ezxenstore.core)
   (wrapped false)
   (libraries
+    astring
     cmdliner
     logs
     threads
