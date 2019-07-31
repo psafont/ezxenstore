@@ -27,7 +27,7 @@ let random_test () =
     Hashtbl.iter (fun k v ->
         match k with
         | "1"::"2"::"3"::_ -> Printf.printf "k=[%s] v=%s\n%!" (String.concat "/" k) v
-        | _ -> 
+        | _ ->
              match C.read !t k with Some v' -> if v' <> v then failwith "Failure!" | None -> failwith "nothing there!") values
 
 
@@ -52,13 +52,13 @@ let test_watch () =
     Alcotest.check f_ty "initial fire" [(["foo"],"tok")] !fired;
     fired := [];
     let t = C.unwatch t ["foo"] "tok" in
-    let t = C.rm t ["foo"] in
+    let _t = C.rm t ["foo"] in
     Alcotest.check f_ty "no fire on unwatched rm" [] !fired;
     fired := []
-    
 
-    
-    
+
+
+
 
 let _ =
     test_watch ();

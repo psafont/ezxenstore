@@ -6,7 +6,7 @@ module type WATCHQUEUE = sig
 end
 
 
-module Cache(Q : WATCHQUEUE) = struct  
+module Cache(Q : WATCHQUEUE) = struct
 
   type watch_cb = string list -> string -> unit
 
@@ -37,16 +37,16 @@ module Cache(Q : WATCHQUEUE) = struct
       end
 
   let watch t path tok cb =
-    let tree = watch_helper t.tree path (fun watch_cb -> 
+    let tree = watch_helper t.tree path (fun watch_cb ->
       (if List.exists (fun (tok',_) -> tok'=tok) watch_cb then raise Xs_protocol.Eexist);
       (* Printf.printf "watch: /%s now has %d watches" (String.concat "/" path) (1+(List.length watch_cb)); *)
       (tok,cb)::watch_cb) in
-    Q.enqueue_watch (fun () -> cb path tok); 
+    Q.enqueue_watch (fun () -> cb path tok);
     {tree; watches=((path,tok),cb)::t.watches}
 
   let unwatch t path tok =
     let tree = watch_helper t.tree path (List.remove_assoc tok) in
-    {tree; watches=List.remove_assoc (path,tok) t.watches}       
+    {tree; watches=List.remove_assoc (path,tok) t.watches}
 
   let write (t : t) path value =
     (* Printf.printf "write path=[%s] value=%s\n%!" (String.concat "/" path) value; *)
@@ -54,8 +54,8 @@ module Cache(Q : WATCHQUEUE) = struct
 (*      Printf.printf "inner: tree.name=%s path'=[%s] watches = [%s]\n%!"
         tree.name
         (String.concat "/" path')
-        (String.concat ";" 
-            (List.map 
+        (String.concat ";"
+            (List.map
                 (fun ((x,y),_) ->
                     Printf.sprintf "{path: [%s]; tok:'%s'}" (String.concat ";" x) y) watches));*)
       List.iter (fun (tok, cb) -> Q.enqueue_watch (fun () -> cb path tok)) tree.watch_cb;
@@ -68,8 +68,8 @@ module Cache(Q : WATCHQUEUE) = struct
             | [],_ -> (here,further)
             | [p],tok when p=x -> ((tok,cb)::here, further)
             | [_p],_ -> (here, further)
-            | p::ps,tok when p=x -> (here, ((ps,tok),cb)::further)
-            | _p::ps,_ -> (here, further))
+            | p::ps, tok when p=x -> (here, ((ps,tok),cb)::further)
+            | _, _ -> (here, further))
             ([],[])
             watches in
         if List.exists (fun c -> c.name=x) tree.children
@@ -84,7 +84,7 @@ module Cache(Q : WATCHQUEUE) = struct
           {tree with children}
         end else begin
           (* Printf.printf "Creating new child %s - here=[%s]\n%!" x (String.concat ";" (List.map (fun (tok,_) -> tok) here)); *)
-          let child = inner further {name=x; v=""; children=[]; watch_cb=here} xs in 
+          let child = inner further {name=x; v=""; children=[]; watch_cb=here} xs in
           {tree with children=child::tree.children}
         end
     in
@@ -111,19 +111,19 @@ module Cache(Q : WATCHQUEUE) = struct
         with Not_found ->
             None
     in inner t.tree path
-  
+
 
   let rm t path =
     let rec fire_all_watches tree =
         List.iter (fun (tok, cb) -> Q.enqueue_watch (fun () -> cb path tok)) tree.watch_cb;
         List.iter fire_all_watches tree.children
-    in       
+    in
     let rec inner tree path' =
         List.iter (fun (tok, cb) -> Q.enqueue_watch (fun () -> cb path tok)) tree.watch_cb;
         match path' with
         | [x] ->
             let removed, retained = List.partition (fun c -> c.name = x) tree.children in
-            List.iter fire_all_watches removed;   
+            List.iter fire_all_watches removed;
             {tree with children=retained}
         | x::xs -> {tree with children=List.map (fun c -> if c.name=x then inner c xs else c) tree.children}
         | [] -> failwith "Removing '/' unsupported"

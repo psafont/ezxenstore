@@ -42,23 +42,24 @@ let make_client () =
 
 let lock = Mutex.create ()
 
-let with_lock m n f x =
-  let id = Thread.id (Thread.self ()) in
-  (* Printf.printf "%d Acquiring lock (%s)\n%!" id n; *)
+let with_lock m _n f x =
+  let _id = Thread.id (Thread.self ()) in
+  (* Printf.printf "%d Acquiring lock (%s)\n%!" _id _n; *)
   Mutex.lock m;
   try
-    (* Printf.printf "%d Got lock (%s)\n%!" id n; *)
+    (* Printf.printf "%d Got lock (%s)\n%!" _id _n; *)
     let result = f x in
-    (* Printf.printf "%d Releasing lock (%s)\n%!" id n; *)
+    (* Printf.printf "%d Releasing lock (%s)\n%!" _id _n; *)
     Mutex.unlock m;
     result
   with e ->
-    (* Printf.printf "%d Releasing lock (%s) (in exception handler: e=%s)\n%!" id n (Printexc.to_string e); *)
+    (* Printf.printf "%d Releasing lock (%s) (in exception handler: e=%s)\n%!" _id _n (Printexc.to_string e); *)
     Mutex.unlock m;
     raise e
 
 let watches = Queue.create ()
 let wcond = Condition.create ()
+
 
 module WatchQueue = struct
   let enqueue_watch cb =
@@ -131,8 +132,8 @@ let process_watch c (path, token) =
         let condition = Hashtbl.find cache_conditions token in
         (* Printf.printf "%d broadcasting %s\n%!" (Thread.id (Thread.self ())) token; *)
         Condition.broadcast condition
-      with e ->
-        (* Printf.printf "%d got exception! %s\n%!" (Thread.id (Thread.self ())) (Printexc.to_string e); *)
+      with _e ->
+        (* Printf.printf "%d got exception! %s\n%!" (Thread.id (Thread.self ())) (Printexc.to_string _e); *)
         ()
       ) ()
   end else begin
@@ -383,8 +384,8 @@ module Xs = struct
       Xs_client_unix.Task.on_cancel t (fun () -> unwatch_all ());
 
       (* Adjust the paths we're watching (if necessary) and block (if possible) *)
-      let rec watch_fn path tok =
-        (* Printf.printf "%d evaluating watch_fn: path=/%s tok=%s\n%!" (Thread.id (Thread.self ())) (String.concat "/" path) tok; *)
+      let rec watch_fn _path _tok =
+        (* Printf.printf "%d evaluating watch_fn: path=/%s tok=%s\n%!" (Thread.id (Thread.self ())) (String.concat "/" _path) _tok; *)
         try
           with_lock path_recorder.PathRecorder.m "watch_fn outer" (fun () ->
             with_lock lock "watch_fn" (fun () -> PathRecorder.clear_access (Some path_recorder)) ();
